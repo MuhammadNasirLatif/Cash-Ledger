@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#15223B">
+<title>Cash Ledger</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root {
+    --ink: #15223B;
+    --ink-soft: rgba(21,34,59,0.62);
+    --ink-faint: rgba(21,34,59,0.14);
+    --parchment: #F7F2E4;
+    --parchment-deep: #EFE8D4;
+    --gold: #B8912F;
+    --gold-bright: #D4AF3D;
+    --forest: #2E6B50;
+    --forest-soft: rgba(46,107,80,0.1);
+    --brick: #9B3B32;
+    --brick-soft: rgba(155,59,50,0.1);
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--parchment);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .font-display { font-family: 'Fraunces', serif; }
+  .font-num { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-in { animation: fadeUp 0.5s ease both; }
+  }
+  @keyframes fadeUp { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform: translateY(0); } }
+
+  /* ---------- Header ---------- */
+  header {
+    background: linear-gradient(155deg, #17253F 0%, #101A2E 100%);
+    color: var(--parchment);
+    padding: 26px 18px 22px;
+    position: relative;
+    box-shadow: 0 2px 0 var(--gold);
+  }
+  header::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: -6px; height: 6px;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(212,175,61,0.35) 10px 11px);
+    opacity: 0.5;
+  }
+  .header-inner { max-width: 560px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-start; }
+  .brand-row { display: flex; align-items: center; gap: 10px; }
+  .brand-mark {
+    width: 34px; height: 34px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(155deg, var(--gold-bright), var(--gold));
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: #17253F;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .eyebrow { font-size: 10.5px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-bright); margin: 0 0 2px; }
+  h1 { font-size: 23px; margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  .net-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(247,242,228,0.55); margin: 0 0 3px; text-align: right; }
+  .net-value { font-size: 20px; font-weight: 600; text-align: right; margin: 0; }
+  .offline-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10.5px; color: rgba(247,242,228,0.5); margin-top: 8px;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #6FBF95; box-shadow: 0 0 0 3px rgba(111,191,149,0.15); }
+
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px 44px; }
+
+  /* ---------- Month selector ---------- */
+  .month-select {
+    width: 100%; background: #fff; border: 1px solid var(--ink-faint);
+    border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between;
+    align-items: center; font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600;
+    box-shadow: 0 1px 3px rgba(21,34,59,0.06);
+    cursor: pointer;
+  }
+  .month-select svg { transition: transform 0.15s ease; color: var(--ink-soft); }
+  .month-select.open svg { transform: rotate(180deg); }
+  .month-dropdown {
+    display: none; background: #fff; border: 1px solid var(--ink-faint);
+    border-radius: 12px; margin-top: 6px; overflow: hidden; box-shadow: 0 8px 24px rgba(21,34,59,0.14);
+  }
+  .month-dropdown.open { display: block; }
+  .month-option { padding: 13px 18px; font-size: 14.5px; border-top: 1px solid var(--ink-faint); cursor: pointer; }
+  .month-option:first-child { border-top: none; }
+  .month-option.active { background: var(--parchment); font-weight: 600; color: var(--ink); }
+  .month-option.new-month { color: var(--brick); font-weight: 600; }
+
+  /* ---------- Summary cards ---------- */
+  .summary { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .card {
+    background: #fff; border: 1px solid var(--ink-faint); border-radius: 12px; padding: 14px 12px;
+    box-shadow: 0 1px 2px rgba(21,34,59,0.04);
+  }
+  .card.net { background: linear-gradient(155deg, #17253F, #101A2E); border-color: transparent; }
+  .card-label { display: flex; align-items: center; gap: 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 5px; font-weight: 600; }
+  .card-value { font-size: 14.5px; font-weight: 600; }
+  .in-color { color: var(--forest); }
+  .out-color { color: var(--brick); }
+  .net-color-pos { color: #7FCFA4; }
+  .net-color-neg { color: #E68A82; }
+
+  /* ---------- Form ---------- */
+  .form-card { background: #fff; border: 1px solid var(--ink-faint); border-radius: 14px; padding: 18px; margin-top: 18px; box-shadow: 0 1px 3px rgba(21,34,59,0.05); }
+  .form-title { font-family: 'Fraunces', serif; font-size: 16.5px; font-weight: 600; margin: 0 0 12px; display: flex; align-items: center; gap: 7px; }
+  .form-title::before { content: ""; width: 3px; height: 15px; background: var(--gold); border-radius: 2px; display: inline-block; }
+  .toggle-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .toggle-btn {
+    flex: 1; padding: 12px; border-radius: 9px; font-size: 14px; font-weight: 600;
+    border: 1.5px solid; background: #fff; cursor: pointer; transition: all 0.15s ease;
+  }
+  .toggle-btn.in-active { background: var(--forest); color: #fff; border-color: var(--forest); box-shadow: 0 2px 8px rgba(46,107,80,0.25); }
+  .toggle-btn.in-inactive { color: var(--forest); border-color: rgba(46,107,80,0.35); }
+  .toggle-btn.out-active { background: var(--brick); color: #fff; border-color: var(--brick); box-shadow: 0 2px 8px rgba(155,59,50,0.25); }
+  .toggle-btn.out-inactive { color: var(--brick); border-color: rgba(155,59,50,0.35); }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 11px; }
+  .field label { font-size: 11px; color: var(--ink-soft); display: block; margin-bottom: 5px; font-weight: 500; }
+  .field input {
+    width: 100%; border: 1px solid var(--ink-faint); border-radius: 9px; padding: 11px 13px;
+    font-size: 15px; font-family: inherit; background: var(--parchment); color: var(--ink);
+  }
+  .field input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,145,47,0.15); background: #fff; }
+  .field.full { margin-bottom: 13px; }
+
+  .error-msg { font-size: 12px; color: var(--brick); margin: 0 0 11px; font-weight: 500; }
+
+  .add-btn {
+    width: 100%; background: var(--ink); color: var(--parchment); border: none; border-radius: 9px;
+    padding: 14px; font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 7px;
+    box-shadow: 0 2px 10px rgba(21,34,59,0.2);
+    transition: background 0.15s ease;
+  }
+  .add-btn:active { background: #0D1729; }
+
+  /* ---------- Entries list ---------- */
+  .list-card { background: #fff; border: 1px solid var(--ink-faint); border-radius: 14px; margin-top: 18px; overflow: hidden; box-shadow: 0 1px 3px rgba(21,34,59,0.05); }
+  .list-header { padding: 15px 18px; border-bottom: 1px solid var(--ink-faint); font-family: 'Fraunces', serif; font-size: 15.5px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .list-header span.count { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .empty-state { padding: 44px 24px; text-align: center; }
+  .empty-state .icon { font-size: 26px; margin-bottom: 8px; opacity: 0.35; }
+  .empty-state p { font-size: 13px; color: var(--ink-soft); margin: 0; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.entry {
+    display: flex; align-items: center; gap: 10px; padding: 12px 18px;
+    border-top: 1px solid var(--ink-faint);
+  }
+  li.entry:nth-child(even) { background: rgba(247,242,228,0.4); }
+  .entry-date { font-size: 11px; color: var(--ink-soft); width: 44px; flex-shrink: 0; font-family: 'IBM Plex Mono', monospace; }
+  .entry-tag { font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 3px 7px; border-radius: 5px; flex-shrink: 0; letter-spacing: 0.03em; }
+  .entry-tag.in { background: var(--forest-soft); color: var(--forest); }
+  .entry-tag.out { background: var(--brick-soft); color: var(--brick); }
+  .entry-note { flex: 1; font-size: 13.5px; color: rgba(21,34,59,0.78); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .entry-amount { font-size: 14px; font-weight: 600; flex-shrink: 0; }
+  .entry-del { background: none; border: none; color: rgba(21,34,59,0.25); font-size: 15px; padding: 5px; flex-shrink: 0; cursor: pointer; line-height: 1; }
+  .entry-del:active { color: var(--brick); }
+
+  /* ---------- Export / Import ---------- */
+  .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-soft); font-weight: 600; margin: 22px 2px 9px; }
+  .export-row { display: flex; gap: 10px; }
+  .export-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    background: #fff; border: 1.5px solid var(--ink-faint); color: var(--ink);
+    border-radius: 10px; padding: 12px 8px; font-size: 13px; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: all 0.15s ease;
+  }
+  .export-btn.pdf { border-color: rgba(155,59,50,0.35); color: var(--brick); }
+  .export-btn.import { border-color: rgba(46,107,80,0.35); color: var(--forest); }
+  .export-btn:active { background: var(--parchment); }
+  #csvFileInput { display: none; }
+
+  .footer-note { text-align: center; font-size: 11px; color: rgba(21,34,59,0.4); margin-top: 24px; line-height: 1.6; }
+
+  #printArea { display: none; }
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea { display: block; position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+    .p-title { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; margin: 0 0 2px; color: #15223B; }
+    .p-sub { font-size: 12px; color: #555; margin: 0 0 18px; }
+    .p-summary { display: flex; gap: 24px; margin-bottom: 18px; padding: 12px 0; border-top: 1.5px solid #15223B; border-bottom: 1.5px solid #15223B; }
+    .p-summary div span { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #555; margin-bottom: 2px; }
+    .p-summary div b { font-size: 15px; font-family: 'IBM Plex Mono', monospace; }
+    table.p-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    table.p-table th { text-align: left; padding: 6px 8px; border-bottom: 1.5px solid #15223B; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+    table.p-table td { padding: 6px 8px; border-bottom: 1px solid #ddd; font-family: 'IBM Plex Mono', monospace; }
+    table.p-table td.p-note { font-family: 'Inter', sans-serif; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand-row">
+      <div class="brand-mark">Rs</div>
+      <div>
+        <p class="eyebrow">Nasir's Ledger</p>
+        <h1>Cash In &amp; Out</h1>
+      </div>
+    </div>
+    <div>
+      <p class="net-label">Overall Net</p>
+      <p class="net-value font-num" id="overallNet">Rs 0</p>
+    </div>
+  </div>
+  <div class="header-inner" style="margin-top:2px;">
+    <div class="offline-badge"><span class="dot"></span> Offline — data is phone pe mehfooz</div>
+  </div>
+</header>
+
+<main>
+  <div style="position:relative;" class="fade-in">
+    <div class="month-select" id="monthSelectBtn">
+      <span id="monthLabel" class="font-display"></span>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="month-dropdown" id="monthDropdown"></div>
+  </div>
+
+  <div class="summary fade-in" style="animation-delay:0.05s;">
+    <div class="card">
+      <div class="card-label in-color">▲ In</div>
+      <div class="card-value in-color font-num" id="totalIn">Rs 0</div>
+    </div>
+    <div class="card">
+      <div class="card-label out-color">▼ Out</div>
+      <div class="card-value out-color font-num" id="totalOut">Rs 0</div>
+    </div>
+    <div class="card net">
+      <div class="card-label" style="color:var(--gold-bright);">Net</div>
+      <div class="card-value font-num" id="totalNet">Rs 0</div>
+    </div>
+  </div>
+
+  <form class="form-card fade-in" id="entryForm" style="animation-delay:0.1s;">
+    <p class="form-title">Nayi Entry</p>
+    <div class="toggle-row">
+      <button type="button" class="toggle-btn in-active" id="btnIn">Payment In</button>
+      <button type="button" class="toggle-btn out-inactive" id="btnOut">Payment Out</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="fieldDate">
+      </div>
+      <div class="field">
+        <label>Amount (Rs)</label>
+        <input type="number" inputmode="decimal" placeholder="0" id="fieldAmount">
+      </div>
+    </div>
+    <div class="field full">
+      <label>Detail (optional)</label>
+      <input type="text" placeholder="e.g. Tuition fee, Bijli ka bill..." id="fieldNote">
+    </div>
+    <p class="error-msg" id="errorMsg" style="display:none;"></p>
+    <button type="submit" class="add-btn">+ Entry Add Karein</button>
+  </form>
+
+  <div class="list-card fade-in" style="animation-delay:0.15s;">
+    <div class="list-header">
+      <span id="listHeaderTitle"></span>
+      <span class="count" id="listHeaderCount"></span>
+    </div>
+    <div id="listBody"></div>
+  </div>
+
+  <p class="section-label">Backup &amp; Reports</p>
+  <div class="export-row fade-in" style="animation-delay:0.2s;">
+    <button type="button" class="export-btn pdf" id="pdfBtn">⬇ Is Month ki PDF</button>
+    <button type="button" class="export-btn" id="csvBtn">⬇ CSV Backup</button>
+    <button type="button" class="export-btn import" id="importBtn">⬆ Import</button>
+  </div>
+  <input type="file" id="csvFileInput" accept=".csv,text/csv">
+
+  <p class="footer-note">Ye file poori tarah offline kaam karti hai. Home screen pe add kar lein taake app jaisi feel mile.<br>Naye update se pehle hamesha CSV Backup le lein, phir nayi file mein Import kar lein.</p>
+</main>
+
+<div id="printArea"></div>
+
+<script>
+  const STORAGE_KEY = 'cash-ledger-entries-v1';
+  let entries = [];
+  let currentType = 'in';
+  let selectedMonth = todayMonth();
+
+  function todayMonth() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+  }
+  function todayISO() {
+    return new Date().toISOString().slice(0,10);
+  }
+  function monthLabel(ym) {
+    const [y,m] = ym.split('-');
+    const d = new Date(Number(y), Number(m)-1, 1);
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  function fmt(n) {
+    const sign = n < 0 ? '-' : '';
+    return sign + 'Rs ' + Math.abs(Math.round(n)).toLocaleString('en-PK');
+  }
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      entries = raw ? JSON.parse(raw) : [];
+    } catch(e) { entries = []; }
+  }
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }
+
+  function allMonths() {
+    const set = new Set(entries.map(e => e.date.slice(0,7)));
+    set.add(selectedMonth);
+    return Array.from(set).sort().reverse();
+  }
+
+  function render() {
+    document.getElementById('monthLabel').textContent = monthLabel(selectedMonth);
+
+    const monthEntries = entries
+      .filter(e => e.date.slice(0,7) === selectedMonth)
+      .sort((a,b) => a.date < b.date ? 1 : -1);
+
+    const inTotal = monthEntries.filter(e=>e.type==='in').reduce((s,e)=>s+e.amount,0);
+    const outTotal = monthEntries.filter(e=>e.type==='out').reduce((s,e)=>s+e.amount,0);
+    const net = inTotal - outTotal;
+    const overallNet = entries.reduce((s,e)=> s + (e.type==='in' ? e.amount : -e.amount), 0);
+
+    document.getElementById('totalIn').textContent = fmt(inTotal);
+    document.getElementById('totalOut').textContent = fmt(outTotal);
+    const netEl = document.getElementById('totalNet');
+    netEl.textContent = fmt(net);
+    netEl.className = 'card-value font-num ' + (net >= 0 ? 'net-color-pos' : 'net-color-neg');
+
+    const overallEl = document.getElementById('overallNet');
+    overallEl.textContent = fmt(overallNet);
+    overallEl.className = 'net-value font-num ' + (overallNet >= 0 ? 'net-color-pos' : 'net-color-neg');
+
+    document.getElementById('listHeaderTitle').textContent = monthLabel(selectedMonth);
+    document.getElementById('listHeaderCount').textContent = monthEntries.length + ' entries';
+
+    const listBody = document.getElementById('listBody');
+    if (monthEntries.length === 0) {
+      listBody.innerHTML = '<div class="empty-state"><div class="icon">✎</div><p>Is month ke liye abhi koi entry nahi.<br>Upar form se pehli entry likhein.</p></div>';
+    } else {
+      listBody.innerHTML = '<ul>' + monthEntries.map(e => {
+        const dd = e.date.slice(8,10), mm = e.date.slice(5,7);
+        const sign = e.type === 'in' ? '+' : '-';
+        const cls = e.type === 'in' ? 'in-color' : 'out-color';
+        return '<li class="entry">' +
+          '<span class="entry-date">' + dd + '/' + mm + '</span>' +
+          '<span class="entry-tag ' + e.type + '">' + (e.type==='in' ? 'In' : 'Out') + '</span>' +
+          '<span class="entry-note">' + (e.note ? escapeHtml(e.note) : '—') + '</span>' +
+          '<span class="entry-amount ' + cls + ' font-num">' + sign + fmt(e.amount) + '</span>' +
+          '<button class="entry-del" data-id="' + e.id + '">✕</button>' +
+        '</li>';
+      }).join('') + '</ul>';
+
+      listBody.querySelectorAll('.entry-del').forEach(btn => {
+        btn.addEventListener('click', () => {
+          entries = entries.filter(e => e.id !== btn.dataset.id);
+          save();
+          render();
+        });
+      });
+    }
+
+    renderMonthDropdown();
+  }
+
+  function renderMonthDropdown() {
+    const dd = document.getElementById('monthDropdown');
+    const months = allMonths();
+    dd.innerHTML = months.map(m =>
+      '<div class="month-option' + (m===selectedMonth ? ' active' : '') + '" data-month="' + m + '">' + monthLabel(m) + '</div>'
+    ).join('') + '<div class="month-option new-month" id="newMonthBtn">+ Naya month shuru karein</div>';
+
+    dd.querySelectorAll('.month-option[data-month]').forEach(opt => {
+      opt.addEventListener('click', () => {
+        selectedMonth = opt.dataset.month;
+        closeDropdown();
+        render();
+      });
+    });
+    document.getElementById('newMonthBtn').addEventListener('click', () => {
+      const input = prompt('Naya month kis format mein? (YYYY-MM, jaise 2026-09)');
+      if (!input) return;
+      if (!/^\d{4}-\d{2}$/.test(input)) { alert('Format ghalat hai. YYYY-MM likhein, jaise 2026-09'); return; }
+      selectedMonth = input;
+      document.getElementById('fieldDate').value = input + '-01';
+      closeDropdown();
+      render();
+    });
+  }
+
+  function closeDropdown() {
+    document.getElementById('monthDropdown').classList.remove('open');
+    document.getElementById('monthSelectBtn').classList.remove('open');
+  }
+
+  document.getElementById('monthSelectBtn').addEventListener('click', () => {
+    document.getElementById('monthDropdown').classList.toggle('open');
+    document.getElementById('monthSelectBtn').classList.toggle('open');
+  });
+
+  document.getElementById('btnIn').addEventListener('click', () => {
+    currentType = 'in';
+    document.getElementById('btnIn').className = 'toggle-btn in-active';
+    document.getElementById('btnOut').className = 'toggle-btn out-inactive';
+  });
+  document.getElementById('btnOut').addEventListener('click', () => {
+    currentType = 'out';
+    document.getElementById('btnOut').className = 'toggle-btn out-active';
+    document.getElementById('btnIn').className = 'toggle-btn in-inactive';
+  });
+
+  document.getElementById('entryForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('errorMsg');
+    errEl.style.display = 'none';
+
+    const date = document.getElementById('fieldDate').value;
+    const amount = parseFloat(document.getElementById('fieldAmount').value);
+    const note = document.getElementById('fieldNote').value.trim();
+
+    if (!date) { errEl.textContent = 'Date select karein.'; errEl.style.display = 'block'; return; }
+    if (!amount || amount <= 0) { errEl.textContent = 'Sahi amount likhein.'; errEl.style.display = 'block'; return; }
+
+    entries.push({
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
+      date, type: currentType, amount, note
+    });
+    selectedMonth = date.slice(0,7);
+    save();
+
+    document.getElementById('fieldAmount').value = '';
+    document.getElementById('fieldNote').value = '';
+    render();
+  });
+
+  // ---- PDF export (per month, via browser print-to-PDF, works fully offline) ----
+  function downloadMonthPDF() {
+    const monthEntries = entries
+      .filter(e => e.date.slice(0,7) === selectedMonth)
+      .sort((a,b) => a.date < b.date ? -1 : 1);
+
+    if (monthEntries.length === 0) {
+      alert('Is month ke liye koi entry nahi hai.');
+      return;
+    }
+
+    const inTotal = monthEntries.filter(e=>e.type==='in').reduce((s,e)=>s+e.amount,0);
+    const outTotal = monthEntries.filter(e=>e.type==='out').reduce((s,e)=>s+e.amount,0);
+    const net = inTotal - outTotal;
+
+    const rows = monthEntries.map(e => {
+      const dd = e.date.slice(8,10), mm = e.date.slice(5,7), yy = e.date.slice(0,4);
+      return '<tr>' +
+        '<td>' + dd + '/' + mm + '/' + yy + '</td>' +
+        '<td>' + (e.type==='in' ? 'In' : 'Out') + '</td>' +
+        '<td class="p-note">' + (e.note ? escapeHtml(e.note) : '—') + '</td>' +
+        '<td style="text-align:right;">' + (e.type==='in' ? '+' : '-') + fmt(e.amount) + '</td>' +
+      '</tr>';
+    }).join('');
+
+    document.getElementById('printArea').innerHTML =
+      '<p class="p-title">Cash Ledger — ' + monthLabel(selectedMonth) + '</p>' +
+      '<p class="p-sub">Nasir — printed on ' + new Date().toLocaleDateString('en-GB') + '</p>' +
+      '<div class="p-summary">' +
+        '<div><span>Total In</span><b>' + fmt(inTotal) + '</b></div>' +
+        '<div><span>Total Out</span><b>' + fmt(outTotal) + '</b></div>' +
+        '<div><span>Net Cash</span><b>' + fmt(net) + '</b></div>' +
+      '</div>' +
+      '<table class="p-table"><thead><tr><th>Date</th><th>Type</th><th>Detail</th><th style="text-align:right;">Amount</th></tr></thead>' +
+      '<tbody>' + rows + '</tbody></table>';
+
+    window.print();
+  }
+
+  // ---- CSV backup (all months, all entries) ----
+  function downloadCSVBackup() {
+    if (entries.length === 0) {
+      alert('Abhi koi entry nahi hai backup karne ke liye.');
+      return;
+    }
+    const sorted = [...entries].sort((a,b) => a.date < b.date ? -1 : 1);
+    let csv = 'Date,Month,Type,Amount,Detail\n';
+    sorted.forEach(e => {
+      const noteEscaped = '"' + (e.note || '').replace(/"/g,'""') + '"';
+      csv += [e.date, e.date.slice(0,7), e.type === 'in' ? 'In' : 'Out', e.amount, noteEscaped].join(',') + '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cash-ledger-backup-' + todayISO() + '.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- CSV import (parses backup file, merges into existing entries) ----
+  function parseCSVLine(line) {
+    // basic CSV parser that respects quoted fields
+    const result = [];
+    let cur = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (inQuotes) {
+        if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') { inQuotes = false; }
+        else { cur += c; }
+      } else {
+        if (c === '"') { inQuotes = true; }
+        else if (c === ',') { result.push(cur); cur = ''; }
+        else { cur += c; }
+      }
+    }
+    result.push(cur);
+    return result;
+  }
+
+  function importCSVText(text) {
+    const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+    if (lines.length < 2) { alert('CSV file khali ya ghalat format mein hai.'); return; }
+
+    const header = parseCSVLine(lines[0]).map(h => h.trim().toLowerCase());
+    const dateIdx = header.indexOf('date');
+    const typeIdx = header.indexOf('type');
+    const amountIdx = header.indexOf('amount');
+    const noteIdx = header.indexOf('detail');
+
+    if (dateIdx === -1 || typeIdx === -1 || amountIdx === -1) {
+      alert('CSV format pehchana nahi gaya. Sirf isi app se banaya gaya CSV backup import karein.');
+      return;
+    }
+
+    const existingKeys = new Set(entries.map(e => e.date + '|' + e.type + '|' + e.amount + '|' + e.note));
+    let added = 0, skipped = 0;
+
+    for (let i = 1; i < lines.length; i++) {
+      const cols = parseCSVLine(lines[i]);
+      const date = (cols[dateIdx] || '').trim();
+      const typeRaw = (cols[typeIdx] || '').trim().toLowerCase();
+      const amount = parseFloat(cols[amountIdx]);
+      const note = noteIdx !== -1 ? (cols[noteIdx] || '').trim() : '';
+
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !amount || amount <= 0) { skipped++; continue; }
+      const type = typeRaw === 'in' ? 'in' : (typeRaw === 'out' ? 'out' : null);
+      if (!type) { skipped++; continue; }
+
+      const key = date + '|' + type + '|' + amount + '|' + note;
+      if (existingKeys.has(key)) { skipped++; continue; } // avoid duplicate on re-import
+
+      entries.push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2,8) + '-' + i,
+        date, type, amount, note
+      });
+      existingKeys.add(key);
+      added++;
+    }
+
+    save();
+    render();
+    alert('Import mukammal.\n' + added + ' nayi entries add hui.' + (skipped > 0 ? '\n' + skipped + ' pehle se maujood ya ghalat format ki wajah se skip hui.' : ''));
+  }
+
+  document.getElementById('pdfBtn').addEventListener('click', downloadMonthPDF);
+  document.getElementById('csvBtn').addEventListener('click', downloadCSVBackup);
+  document.getElementById('importBtn').addEventListener('click', () => {
+    document.getElementById('csvFileInput').click();
+  });
+  document.getElementById('csvFileInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => importCSVText(ev.target.result);
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
+  // init
+  load();
+  document.getElementById('fieldDate').value = todayISO();
+  render();
+</script>
+</body>
+</html>
